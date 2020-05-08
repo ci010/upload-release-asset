@@ -5654,6 +5654,9 @@ const { GitHub } = __webpack_require__(469);
 const fs = __webpack_require__(747);
 const path = __webpack_require__(622);
 const ft = __webpack_require__(631);
+const util = __webpack_require__(669);
+
+const readFile = util.promisify(fs.readFile);
 
 async function run() {
   try {
@@ -5664,9 +5667,6 @@ async function run() {
     const uploadUrl = core.getInput('upload_url', { required: true });
     const assetPath = core.getInput('asset_dir_path', { required: true });
 
-    // Determine content-length for header to upload asset
-    const contentLength = filePath => fs.statSync(filePath).size;
-
     if (fs.statSync(assetPath).isDirectory()) {
       const assets = fs.readdirSync(assetPath);
       await Promise.all(
@@ -5675,20 +5675,21 @@ async function run() {
           if (fs.statSync(subAssetPath).isDirectory()) {
             return;
           }
-          const fileType = await ft.fromFile(subAssetPath);
+          const buff = readFile(subAssetPath);
+          const fileType = await ft.fromBuffer(buff);
           const headers = {
             'content-type': fileType
               ? fileType.mime
               : path.extname(asset)
                 ? `application/${path.extname(asset)}`
                 : 'text/plain',
-            'content-length': contentLength(assetPath)
+            'content-length': buff.length
           };
           await github.repos.uploadReleaseAsset({
             url: uploadUrl,
             headers,
             name: asset,
-            file: subAssetPath
+            file: buff
           });
         })
       );
