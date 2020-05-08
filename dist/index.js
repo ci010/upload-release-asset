@@ -5672,18 +5672,17 @@ async function run() {
       await Promise.all(
         assets.map(async asset => {
           const subAssetPath = path.join(assetPath, asset);
+          if (fs.statSync(subAssetPath).isDirectory()) {
+            return;
+          }
           const fileType = await fromFile(subAssetPath);
           const headers = { 'content-type': fileType.mime, 'content-length': contentLength(assetPath) };
-          const uploadAssetResponse = await github.repos.uploadReleaseAsset({
+          await github.repos.uploadReleaseAsset({
             url: uploadUrl,
             headers,
             name: asset,
             file: subAssetPath
           });
-          const {
-            data: { browser_download_url: browserDownloadUrl }
-          } = uploadAssetResponse;
-          return browserDownloadUrl;
         })
       );
     }
