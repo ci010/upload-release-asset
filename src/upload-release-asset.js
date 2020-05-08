@@ -2,7 +2,7 @@ const core = require('@actions/core');
 const { GitHub } = require('@actions/github');
 const fs = require('fs');
 const path = require('path');
-const { fromFile } = require('file-type');
+const ft = require('file-type');
 
 async function run() {
   try {
@@ -24,7 +24,7 @@ async function run() {
           if (fs.statSync(subAssetPath).isDirectory()) {
             return;
           }
-          const fileType = await fromFile(subAssetPath);
+          const fileType = await ft.fromFile(subAssetPath);
           const headers = { 'content-type': fileType.mime, 'content-length': contentLength(assetPath) };
           await github.repos.uploadReleaseAsset({
             url: uploadUrl,

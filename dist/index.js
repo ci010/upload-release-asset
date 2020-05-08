@@ -5653,7 +5653,7 @@ const core = __webpack_require__(470);
 const { GitHub } = __webpack_require__(469);
 const fs = __webpack_require__(747);
 const path = __webpack_require__(622);
-const { fromFile } = __webpack_require__(631);
+const ft = __webpack_require__(631);
 
 async function run() {
   try {
@@ -5675,7 +5675,7 @@ async function run() {
           if (fs.statSync(subAssetPath).isDirectory()) {
             return;
           }
-          const fileType = await fromFile(subAssetPath);
+          const fileType = await ft.fromFile(subAssetPath);
           const headers = { 'content-type': fileType.mime, 'content-length': contentLength(assetPath) };
           await github.repos.uploadReleaseAsset({
             url: uploadUrl,

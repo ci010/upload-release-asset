@@ -1,8 +1,12 @@
+const path = require('path');
+
 jest.mock('@actions/core');
 jest.mock('@actions/github');
 jest.mock('fs');
+jest.mock('file-type');
 
 const core = require('@actions/core');
+const fileType = require('file-type');
 const { GitHub, context } = require('@actions/github');
 const fs = require('fs');
 const run = require('../src/upload-release-asset');
@@ -22,6 +26,12 @@ describe('Upload Release Asset', () => {
     fs.statSync = jest.fn().mockReturnValueOnce({
       size: 527
     });
+
+    fileType.fromFile = jest.fn().mockReturnValueOnce(
+      Promise.resolve({
+        mime: 'mine'
+      })
+    );
 
     content = Buffer.from('test content');
     fs.readFileSync = jest.fn().mockReturnValueOnce(content);
@@ -44,33 +54,33 @@ describe('Upload Release Asset', () => {
     core.getInput = jest
       .fn()
       .mockReturnValueOnce('upload_url')
-      .mockReturnValueOnce('asset_path')
-      .mockReturnValueOnce('asset_name')
-      .mockReturnValueOnce('asset_content_type');
+      .mockReturnValueOnce('build');
+
+    fs.statSync = jest
+      .fn()
+      .mockReturnValueOnce({
+        isDirectory: () => true
+      })
+      .mockReturnValueOnce({
+        isDirectory: () => true
+      })
+      .mockReturnValueOnce({
+        isDirectory: () => false
+      })
+      .mockReturnValueOnce({
+        size: 527
+      });
+
+    fs.readdirSync = jest.fn().mockReturnValueOnce(['a', 'b']);
 
     await run();
 
     expect(uploadReleaseAsset).toHaveBeenCalledWith({
       url: 'upload_url',
-      headers: { 'content-type': 'asset_content_type', 'content-length': 527 },
-      name: 'asset_name',
-      file: content
+      headers: { 'content-type': 'mine', 'content-length': 527 },
+      name: 'b',
+      file: path.join('build', 'b')
     });
-  });
-
-  test('Output is set', async () => {
-    core.getInput = jest
-      .fn()
-      .mockReturnValueOnce('upload_url')
-      .mockReturnValueOnce('asset_path')
-      .mockReturnValueOnce('asset_name')
-      .mockReturnValueOnce('asset_content_type');
-
-    core.setOutput = jest.fn();
-
-    await run();
-
-    expect(core.setOutput).toHaveBeenNthCalledWith(1, 'browser_download_url', 'browserDownloadUrl');
   });
 
   test('Action fails elegantly', async () => {
