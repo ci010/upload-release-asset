@@ -25,7 +25,14 @@ async function run() {
             return;
           }
           const fileType = await ft.fromFile(subAssetPath);
-          const headers = { 'content-type': fileType.mime, 'content-length': contentLength(assetPath) };
+          const headers = {
+            'content-type': fileType
+              ? fileType.mime
+              : path.extname(asset)
+                ? `application/${path.extname(asset)}`
+                : 'text/plain',
+            'content-length': contentLength(assetPath)
+          };
           await github.repos.uploadReleaseAsset({
             url: uploadUrl,
             headers,
